@@ -89,27 +89,35 @@ då vi ska ha mycket mana så ska den definitivt multipliceras med en (troligtvi
 Grafiken planerar jag att hantera som en separat tråd som helt enkelt ritar upp allt baserat på en lista 
 av Rectangle-BufferedImage par samt informationen om var spelaren befinner sig för ögonblicket. 
 Rectangle kan ju innehålla en position så i kombination med sin storlek så genom att utnyttja detta kan vi
-få den position och dimensioner som bilden ska ritas upp på
+få den position och dimensioner som bilden ska ritas upp på, och med hjälp av glTranslate så kommer vi att 
+kunna se till att rätt delar av banan dyker upp på skärmen.
+grafiken kommer i princip inte alls att interagera med spelet. Vi ska ha en bufferklass som innehåller flera
+listor av dessa Rectangle-BufferedImage, en för terrängen, en för NPCs, etc. Vi ska också ha ett antal booleans
+som säger om något har förändrats. På detta sätt kan vi undvika att ladda in samma bilder igen.
+Terrängen till exempel kommer troligtvis bara att laddas in en gång, medan spelaren och minst en NPC lär ändras
+varje iteration. Med tanke på att det som tar längst tid att göra kan det vara en idé att redan då bilderna 
+laddas in konvertera dem till en ByteBuffer (det format som vi använder för att rita upp dem). 
+Grafiken kommer dock inte att påverka resten av spelet så inga faror här.
 
+                                                DESIGN
+Designen är helt och hållet grafisk, den ligger helt och hållet i bilderna och kommer därför inte alls att
+påverka spelet. Designen lämnas i händerna på våra Grafiska Designers.
 
+                                                DATABAS
+Livedata är inget problem. Så länge spelet är igång så sparas ju allt i de klasser/variabler som bygger upp 
+spelet. När det är dags att stänga ner, och kanske också då man klarat en nivå, så måste detta sparas mer
+permanent och det är då en sparningsklass kan komma att bli användbar. Sparning kommer dock inte att vara
+något som helst problem då vi i det tillfället inte kommer att göra något annat så programmet behöver bara
+läsa den data som behövs och spara ner det. Det viktiga här är att komma på ett bra format att spara i så 
+att det hela kan läsas in igen uten någon korruption. 
+Det fanns ett intresse för krypterade sparningar för att förhindra fusk, detta kan lätt ordnas.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                                                STORY
+Samma som med Design, igen direkt koppling till programmeringen. Det kräver dock någon metod att berätta vår
+story. Vi har tidigare preliminärt kommit fram till att använda stillbilder med text för att förklara detta.
+Detta är enkelt att göra och kräver bara att vi gör en IF-sats i grafiken som låter oss rita upp en bild över
+hela skärmen och sedan hålla den där för en förutbestämd tid innan vi ritar upp nästa. Detta kräver endast av
+huvudprogrammet att det finns en loop som låter det vänta tills bildspelet är klart. Detta kan enkelt göras med 
+en while-loop som kollar om grafiken är klar (kan göras med en enkel boolean 'done' som grafiken sätter till
+'true' då den är klar. Om 'done' inte är 'true' så kan programmet sova i kanske 100 millisekunder bara.
 
