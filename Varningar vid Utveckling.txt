@@ -10,6 +10,15 @@ särskilda åtgärder behöver göras för att säkerställa kompabilitet.
 Ljud kommer att hanteras av en separat klass vars funktioner enbart kommer att anropas från huvudtråden.
 Detta innebär att kollisioner är i princip omöjliga, inga åtgärder behöver göras.
 
+                                                ANIMATIONER
+Både spelaren (PC) och alla NPC ska helst ha animationer. Dessa kommer såklart att vara enkla men det är
+bäst att vara redo för dessa redan från början. För att hantera detta föreslår jag att vi inför en Model-klass
+som varje NPC/PC har en instans av och som innehåller de bilder som behövs för animationen och som dessutom
+kan hantera att byta vilken bild som skickas baserat på spelarens handlingar. Då spelaren står stilla ska
+vi kanske bara byta mellan två olika bilder så att vi får en enkel upp/ner-rörelse medan vi när vi rör på
+oss så kanske vi vill ha 4-5 bilder för att få en bättre rörelse. Vi bör också ha en "attack"-bild eller två
+för våra attacker/förmågor.
+
                                                 NPC
 Varje NPC måste ha en enkel AI som kontrollerar dess handlingar. Denna AI måste enbart kunna läsa info
 om sin egen och spelarens position, samt ha möjligheten att publicera uppdateringar om sina egna handlingar
@@ -19,6 +28,45 @@ Möjliga konflikter: att AIn gör ändringar direkt utanför sin egen klass som 
 lösning är att göra en synkronisering när en ny position (exempelvis) ska skrivas så att huvudtråden tar en
 kort paus och väntar på att AIn ska skriva klart. Dessutom, rekommenderar att vi har ett delat system för 
 hitboxes mellan NPC och PC där vi har ett enkelt sätt att avgöra vilken sorts kollision som har hänt.
+En annan sak som ska delas mellan NPC och PC är ElementType, som definierar vilka styrkor/svagheter som man
+har och därmed hur mycket skada man tar (mer infå på avsnittet ELEMENT_TYPE). 
+
+                                                PC (Player Character)
+Spelaren kommer att behöva en HUD (Heads Up Display) som visar sådant som HP, mana och essens. Denna kan lätt
+läggas till ovanpå allt annat på displayen så det kommer inte finnas någon direkt koppling till något annat
+i spelet (den kommer enbart att läsa från data om spelaren, aldrig ändra data) så det finns inga konflikter
+som kan ske där.
+Spelaren kommer att behöva en hitbox som definierar var han kan träffas. Han behöver dock något sätt att
+upptäcka kollisioner. Om vi använde hitboxen för detta så skulle vi inte kunna avgöra vilket håll kollisionen 
+kommer ifrån. Därför föreslår jag ett system med fyra extra hitboxes som ligger ovanför, under och still
+höger/vänster om spelaren. Dessa ska enbart kolla efter kollisioner med banan. Genom att placera dessa på
+passande platser längs kanten på spelarens hitbox kan vi se till att spelaren kan gå uppför backar till och
+med en viss lutning. 
+Vi vill ju ha experience för att spelaren ska kunna bli starkare, som en motivation att döda så många fiender
+som möjligt. Detta är inte så svårt att göra, vi kan utnyttja vårt system för att få mana från fiender vi
+dödar till att få experience (se sektionen DROPS). Detta kräver dock att vi har Stats, vilket nog även alla
+NPCs i så fall kan utnyttja. Vi går djupare in i det här i sektionen STATS.
+Spelarens kontroller kommer i princip bara att göra tre saker. Ändra spelarens position, aktivera attacker 
+samt öppna/stänga menyn (via Escape). Detta kommer att enbart påverka spelarkaraktären direkt med undantag 
+av menyn, vilket vi kan hantera genom att helt enkelt ha en boolean "paus" som, då den är 'false', förhindrar
+spelet från att updatera sig. Denna MÅSTE dock implementeras redan från början då den kommer att påverka i 
+princip allt i spelet.
+
+                                                FÖRMÅGOR
+Både PC och NPC ska ju ha förmågor av någon sort. Jag föreslår att vi har en klass "Abilities" som delas av
+dessa och som innehåller den data som behövs för att definiera förmågan. Denna data ska innehålla (minst)
+Skada, Räckvidd, Hitbox (så att vi kan se om den träffar), Position, Riktning, Hastighet och ElementType (där
+ElementType är vilken sorts attack det är, vissa förmågor ska ju vara bra mot vissa sorters NPC och så). 
+Medan de flesta av dessa kommer att vara konstanta så måste Skada kunna uppgraderas då Stats ändras (se STATS).
+Mitt förslag är att varje förmåga ska ha en grundskada och en rörlig skada som baseras på ens stats, troligtvis
+genom att en viss Stat multipliceras med en konstant definierad i förmågan för att få bonusskadan..
+
+                                                ELEMENT_TYPE
+Denna klass ska innehålla information om styrkor/svagheter mellan olika ElementType samt en funktion för att
+räkna ut hur skadan ska påverkas. Jag föreslår den funktionen helt enkelt gör en enkel uträkning på den
+inkommande skadan: { FaktiskSkada = (3*InkommandeSkada)/Resistans } där Resistans är ett värde från 1 till 9.
+Det innebär att om man är som mest känslig mot en attack så tar man tre gånger mer skada och om man är som mest
+tålig mot en attack så tar man bara en tredjedel av skadan. 
 
                                                 DROPS (requirements: se NPC)
 Drops kommer helt enkelt att vara "klot" av mana/essens som automatiskt ska sugas mot spelaren och abosrberas.
@@ -26,4 +74,30 @@ Dessa klot ska inte interagera med omgivningen över huvud taget MED UNDANTAG av
 är att känna av i vilken riktning spelaren är och sedan röra sig ditåt. Då kloten passerat spelarens hitbox 
 ska de försvinna och den mängd mana/essens de bär med sig ska läggas till spelarens reserver.
 
-                                                PC (Player Character)
+                                                STATS
+Stats ska bara innehålla variabler och funktioner för att publicera dessa variabler. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
