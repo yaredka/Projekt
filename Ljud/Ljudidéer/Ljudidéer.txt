@@ -1,9 +1,9 @@
 - EXEMPELFORMAT -
-Karaktär/Objekt/Target: Interaktion - Ljudfil (avsluta med ljudformat ifall ljudet finns i mappen)
+KaraktÃ¤r/Objekt/Target: Interaktion - Ljudfil 
+(avsluta med ljudformat ifall ljudet finns i mappen, annars beskrivning)
 
-Huvudkaraktär: Magiattack1 - blabla.mp3
-Låda: Tar skada - kaboom
-
+HuvudkaraktÃ¤r Magiattack1 - blabla.mp3
+LÃ¥da: Tar skada - Explosions ljud
 ============================================================================
 
-Börja här
+Bï¿½rja hï¿½r
