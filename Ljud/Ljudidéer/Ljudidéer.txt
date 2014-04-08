@@ -6,4 +6,4 @@ Huvudkaraktär Magiattack1 - blabla.mp3
 Låda: Tar skada - Explosions ljud
 ============================================================================
 
-B�rja h�r
+Börja här
