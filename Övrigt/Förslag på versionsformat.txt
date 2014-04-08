@@ -1,0 +1,20 @@
+* När en ny fil skapas har den version 1.00
+
+* Varje gång man ändrar en fil ökar man versionen med en hundradel för mindre ändring eller en hel för större ändring. 
+
+* Varje gång man ändrar en fil lägger man till en kommentar i början av filen som inleds med nya versionsnummret följt av kort-kort summering av ändringarna. (Github har ändå koll på alla ändringar, så exakt changelog känns onödigt)
+
+Exempel: 
+
+*****
+#readme.txt
+#1.00: (Person1) Skapade fil
+#1.01: (Person2)Uppdaterade för ny funktionalitet
+#1.02: (Person1)Rättade stavfel
+#1.03: (Person3)La till stycke "Systemkrav"
+#2.00: (Person3)Omstrukturerade filen för ökad tydlighet
+#2.01: (Person1)Uppdaterad för ny funktionalitet
+
+(Innehåll)
+
+*****
