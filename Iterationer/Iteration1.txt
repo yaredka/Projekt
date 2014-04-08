@@ -1,0 +1,14 @@
+																								ITERATION 1
+---------------------------------------------------------------------------------------------------------------
+ATT FÅ KLART DENNA ITERATION/SPRINT
+~~Programmering~~
+- Specificera risker och konflikter som kan uppstå under programmeringen och som måste undvikas.
+- En grafikmotor som kan skriva ut bilder på skärmen i definierade positioner.
+- Grunden till stöd för Animationer.
+- Banan som representerar spelutrymmet som spelobjekten kan röra sig i.
+- PC ska ha grundläggande kontroller och kollisionshantering.
+- Data som definierar Banan, måste kunna laddas in och användas för att återskapa banan när programmet startar.
+~~Design~~
+- En enkel model av PC, och eventuellt också enstaka NPC.
+- Spåna lite ljud-idéer, effekter och sådant (tänk på temat).
+- Slipa på storyn, hitta på fler detaljer (tänk på vilket sound-track som skulle passa).
