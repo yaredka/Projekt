@@ -1,4 +1,4 @@
-                                                ITERATION 1
+                                                Varningar vid Utveckling
 ------------------------------------------------------------------------------------------------------------------
                                                 BANAN
 Banan ska representeras av en samling fyrkanter (java.awt.Rectangle) som vi kan avgöra om spelkaraktären 
@@ -75,9 +75,21 @@ Dessa klot ska inte interagera med omgivningen över huvud taget MED UNDANTAG av
 ska de försvinna och den mängd mana/essens de bär med sig ska läggas till spelarens reserver.
 
                                                 STATS
-Stats ska bara innehålla variabler och funktioner för att publicera dessa variabler. 
+Stats ska bara innehålla variabler och funktioner för att publicera och ändra dessa variabler. Förslag på
+Stats vi bör ha inkluderar Attack, Defense, Vitality och Stamina. Attack kommer att användas av Förmågorna
+för att räkna ut hur mycket starkare de bör bli baserat på din Attack. Defense ska användas för att skydda
+mot en attack, ju högre Defense desto mer av skadan ska försvinna men det bör vara en logaritmisk funktion
+så att Defense långsamt blir mindre värt så att man inte bara blir odödlig genom att satsa allt få Defense.
+Stamina ska direkt bestämma ditt maximala HP, då vi inte ska ha alltför mycket HP kanske vi bara ska addera 
+vår Stamina till en grundmängd HP (eventuellt efter att ha multiplicerat med en kostant).
+Vitality ska bestämma din maximala mana, den kommer precis som Stamina att adderas till en grundmängd men
+då vi ska ha mycket mana så ska den definitivt multipliceras med en (troligtvis ganska stor) konstant.
 
-
+                                                GRAFIK
+Grafiken planerar jag att hantera som en separat tråd som helt enkelt ritar upp allt baserat på en lista 
+av Rectangle-BufferedImage par samt informationen om var spelaren befinner sig för ögonblicket. 
+Rectangle kan ju innehålla en position så i kombination med sin storlek så genom att utnyttja detta kan vi
+få den position och dimensioner som bilden ska ritas upp på
 
 
 
