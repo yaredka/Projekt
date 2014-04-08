@@ -8,3 +8,10 @@ Test-first programmering
 Story points
 Alpha kort
 Projekt kernel
+Agile iterations
+  release planning
+  task planning
+  iteration planning
+Agile acceptance testing
+Refactoring
+Agile risk managment game
