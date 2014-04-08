@@ -1,0 +1,17 @@
+//Funktioner.txt
+#1.00: (Någon) Skapade filen
+#1.01: (Johannes) Redigerad för att följa versionsstandard + Spånade struktur
+
+
+
+Struktur:
+---Kategori--- (relativt oberoende system)
+	*Undergrupp
+		*Enskild funktion/fil (Någon som tänker fixa den)
+
+
+
+
+---Grafik---
+*Rendrering
+	*Rendreringsfunktion (Sebbe?)
