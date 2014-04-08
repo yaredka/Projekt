@@ -1,13 +1,16 @@
-//Funktioner.txt
+#Funktioner.txt v1.02
 #1.00: (Någon) Skapade filen
 #1.01: (Johannes) Redigerad för att följa versionsstandard + Spånade struktur
-
+#1.02: (Johannes) Fixade changelogformat
 
 
 Struktur:
 ---Kategori--- (relativt oberoende system)
-	*Undergrupp
-		*Enskild funktion/fil (Någon som tänker fixa den)
+*Undergrupp
+	*Enskild funktion/fil (Någon som tänker fixa den)
+
+
+
 
 
 
