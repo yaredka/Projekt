@@ -1,5 +1,5 @@
 Projekt
 =======
 
-KTH Project
+KTH Projekt
 
