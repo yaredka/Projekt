@@ -6,4 +6,27 @@ Huvudkaraktär Magiattack1 - blabla.mp3
 Låda: Tar skada - Explosions ljud
 ============================================================================
 
-Börja här
+Bakgrundsmusik: Beror på temat 
+Start meny: 
+Paus meny:
+Klarar banan:
+
+Huvudkaraktär: Gå - "Fotstegs ljud" 
+Huvudkaraktär: Slag - "svichande ljud / karaktären gör ljud ifrån sig"
+Huvudkaraktär: Hopp - "Karaktären gör ljud ifrån sig (stönar)"
+Huvudkaraktär: Landa - "En duns"
+Huvudkaraktär: Tar emot skada - "Någon effekt"
+Huvudkaraktär: Dör - "Ljudsnutt"
+Huvudkaraktär: Absorbera drops - "Någon effekt"
+
+Huvudkaraktär: Magiattack1 -
+Huvudkaraktär: Magiattack2 -
+Huvudkaraktär: Magiattack3 -
+Huvudkaraktär: Magiattack4 -
+
+
+NPC: Slag - "svichande ljud / karaktären gör ljud ifrån sig"
+NPC: Tar emot skada - "Någon effekt"
+
+
+
