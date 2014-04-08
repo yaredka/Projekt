@@ -12,3 +12,4 @@ ATT FÅ KLART DENNA ITERATION/SPRINT
 - En enkel model av PC, och eventuellt också enstaka NPC.
 - Spåna lite ljud-idéer, effekter och sådant (tänk på temat).
 - Slipa på storyn, hitta på fler detaljer (tänk på vilket sound-track som skulle passa).
+- Namnförslag till spelet.
