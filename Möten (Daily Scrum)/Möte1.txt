@@ -20,7 +20,10 @@ Fortsätta leta och komma på nya ljud samt namnförslag.
 Hitta inspiration för modeller till NPC och PC.
 
 Problem:
-Ett problem vi uppäckte inom programmeringen var att OPENGL 
-kräver att man startar fönstret innan man konfiguerar bilder och texturer.
+1) Ett problem vi uppäckte inom programmeringen var att OPENGL 
+   kräver att man startar fönstret innan man konfiguerar bilder och texturer.
+2) Man måste ladda upp bilderna i samma tråd som sköter grafiken.
+
 Åtgärd:
-Detta åtgärdar man genom att man initierar fönstret innan man laddar in bilderna.
+1) Detta åtgärdar man genom att man initierar fönstret innan man laddar in bilderna.
+2) Jobba om en ny struktur.
