@@ -1,0 +1,26 @@
+Scrum möte 140409 09.55
+
+Från gårdagen har vi gjort följande: 
+Lagt till vissa namnförslag.
+Lagt till ljudförslag som vi kan använda i spelet.
+Punkt 1 från iteration 1 (Programmering): Speciefiera risker och konflikter som kan uppstå under programmeringen. Och sen måste undvikas
+Punkt 2 från iteration 1 (Programmering): En grafikmotor som kan skriva ut bilder på skärmen i definerade positioner. (HALVT)
+
+Något att tillägga till iteration 1: NEJ!
+
+Planerna för idag:
+
+Inom programmeringen ska vi göra klart följande punkter:
+PC ska ha grundläggande kontroller för kollisionshantering.
+Data som definierar Banan, måste kunna laddas in och användas för att återskapa banan när programmet startar.
+Fortsätta gårdagens arbete med punkt 2.
+
+Övrigt:
+Fortsätta leta och komma på nya ljud samt namnförslag.
+Hitta inspiration för modeller till NPC och PC.
+
+Problem:
+Ett problem vi uppäckte inom programmeringen var att OPENGL 
+kräver att man startar fönstret innan man konfiguerar bilder och texturer.
+Åtgärd:
+Detta åtgärdar man genom att man initierar fönstret innan man laddar in bilderna.
