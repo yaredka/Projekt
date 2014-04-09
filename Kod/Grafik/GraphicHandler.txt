@@ -1,0 +1,393 @@
+package project.graphics;
+
+import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+
+/**
+ * This is the class which we will send any changes in positions and such in the game to.
+ * It will store it temporarily and then the renderer can pick it up and use it.
+ * 
+ * @author Sebastian
+ * 
+ */
+public class GraphicHandler {
+	private ShapeImage[] terrain = null, npc = null, players = null;	//Contains the shapes and images that can be rendered
+	private int cameraFocus = 0;	//Tells the index in the 'players' array where the player we want to center on is.
+	private int background = 0;		//Contains the texture ID of the background
+	private boolean closeRequested;		//Will be turned into 'true' if the renderer is told to shut down
+	
+	//used to see if any new information has appeared
+	private boolean newTerrain = false, newNPC = false, newPlayers = false;	
+	
+	private OpenGL_Renderer renderer;	//The Class that handles the actual rendering. Runs on its own Thread
+	
+	/**
+	 * A class for temporarily holding information about everything that 
+	 * needs to be rendered until the renderer is ready to handle it. 
+	 * @param fps - the FPS we will initially use. Must be at least equal to OpenGL_Renderer.MINIMAL_ACCEPTABLE_FPS
+	 */
+	public GraphicHandler(int fps){
+		//Initiates the renderer and gives it a reference to ourselves so that it knows where to request data from
+		renderer = new OpenGL_Renderer(this, fps);
+		closeRequested = false;
+		cameraFocus = 0;		//Sets it so that the first player is the focus. We might change it later to make multiplayer possible
+	}
+	
+	/**
+	 * @return - returns a boolean indicating whether or not the user has tried to close the window/program by using Alt+F4
+	 */
+	public boolean isCloseRequested(){return closeRequested;}
+	/**
+	 * Used by the renderer to set 'closeRequested' to 'true' once the user presses Alt+F4
+	 */
+	public void requestClose(){closeRequested = true;}
+	
+	/**
+	 * @return - the index in the 'players' array that the camera should focus on
+	 */
+	public int getFocusIndex(){return cameraFocus;}
+	
+	/**
+	 * @return - returns a boolean indicating if there has been a change in 
+	 * the terrain since it was last loaded by the OpenGL_Renderer
+	 */
+	public boolean newTerrain(){return newTerrain;}
+	/**
+	 * @return - returns a boolean indicating if there has been a change in 
+	 * the NPCs since it was last loaded by the OpenGL_Renderer
+	 */
+	public boolean newNPC(){return newNPC;}
+	/**
+	 * @return - returns a boolean indicating if there has been a change in 
+	 * the players since it was last loaded by the OpenGL_Renderer
+	 */
+	public boolean newPlayers(){return newPlayers;}
+	
+	/**
+	 * Removes all existing Players to create new ones
+	 * @param shapes - the shapes/positions of the players
+	 * @param images - the images that will represent the players
+	 * @return - 'true' if successful, 'false' if the parameter arrays are not of the same length or if either is 'null' 
+	 */
+	public boolean newPlayers(Rectangle[] shapes, BufferedImage[] images){
+		//First we check if we have valid information we need to create the new players
+		if(shapes==null || images==null){System.out.println("GraphicHandler.newTerrain: error@1"); return false;}
+		if(shapes.length != images.length){System.out.println("GraphicHandler.newTerrain: error@2"); return false;}
+		
+		//We work in a temporary array so that we don't get the problem of the renderer reading from an incomplete array
+		ShapeImage[] temp = new ShapeImage[shapes.length];
+		for(int i = 0; i < temp.length; i++){
+			temp[i] = new ShapeImage(OpenGL_Renderer.prepareTexture(images[i]), shapes[i], i);	//Creates a new player
+		}
+		players = temp;		//We set the now complete array as our official player array
+		newPlayers = true;	//We announce that there's new information about players
+		return true;	//We did it!!
+	}
+	
+	/**
+	 * Removes all existing Terrain to create new terrain
+	 * @param shapes - the shapes/positions of the various objects that makes up the terrain
+	 * @param images - the images that will represent the the various objects that makes up the terrain
+	 * @return - 'true' if successful, 'false' if the parameter arrays are not of the same length or if either is 'null' 
+	 */
+	public boolean newTerrain(Rectangle[] shapes, BufferedImage[] images){
+		//First we check if we have valid information we need to create the new terrain
+		if(shapes==null || images==null){System.out.println("GraphicHandler.newTerrain: error@1"); return false;}
+		if(shapes.length != images.length){System.out.println("GraphicHandler.newTerrain: error@2"); return false;}
+		
+		//We work in a temporary array so that we don't get the problem of the renderer reading from an incomplete array
+		ShapeImage[] temp = new ShapeImage[shapes.length];
+		for(int i = 0; i < temp.length; i++){
+			temp[i] = new ShapeImage(OpenGL_Renderer.prepareTexture(images[i]), shapes[i], i);//Creates a new terrain object
+		}
+		terrain = temp;		//We set the now complete array as our official terrain array
+		newTerrain = true;	//We announce that there's new information about terrain
+		return true;
+	}
+	
+	/**
+	 * Removes all existing NPCs to create new ones
+	 * @param shapes - the shapes/positions of the NPCs
+	 * @param images - the images that will represent the NPCs
+	 * @return - 'true' if successful, 'false' if the parameter arrays are not of the same length or if either is 'null' 
+	 */
+	public boolean newNPC(Rectangle[] shapes, BufferedImage[] images){
+		//First we check if we have valid information we need to create the new NPCs
+		if(shapes==null || images==null){System.out.println("GraphicHandler.newNPC: error@1"); return false;}
+		if(shapes.length != images.length){System.out.println("GraphicHandler.newNPC: error@2"); return false;}
+		
+		//We work in a temporary array so that we don't get the problem of the renderer reading from an incomplete array
+		ShapeImage[] temp = new ShapeImage[shapes.length];
+		for(int i = 0; i < temp.length; i++){
+			temp[i] = new ShapeImage(OpenGL_Renderer.prepareTexture(images[i]), shapes[i], i);//Creates a new NPC
+		}
+		npc = temp;			//We set the now complete array as our official NPC array
+		newNPC = true;		//We announce that there's new information about NPCs
+		return true;
+	}
+	
+	/**
+	 * Updates a single player. Use when assigning both new position and an image that has been used before
+	 * @param ID - the index of the player in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newPlayers'
+	 * @param shape - a Rectangle with the new shape and position
+	 * @param textureID - a texture ID. The image needs to be already loaded into the Graphics Card
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updatePlayer(int ID, Rectangle shape, int textureID){
+		if(ID < 0 || ID >= players.length || shape==null || textureID==0){return false;}
+		ShapeImage current = players[ID];
+		current.newData(textureID);
+		current.newShape(shape);
+		newPlayers = true;
+		return true;
+	}
+	/**
+	 * Updates a single player. Use when assigning both new position and new image
+	 * @param ID - the index of the player in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newPlayers'
+	 * @param shape - a Rectangle with the new shape and position
+	 * @param image - a BufferedImage to be turned into a texture. 
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updatePlayer(int ID, Rectangle shape, BufferedImage image){
+		if(ID < 0 || ID >= players.length ||  shape==null || image==null){return false;}
+		ShapeImage current = players[ID];
+		current.newData(OpenGL_Renderer.prepareTexture(image));
+		current.newShape(shape);
+		newPlayers = true;
+		return true;
+	}
+	/**
+	 * Updates a single player. Use when assigning a new position
+	 * @param ID - the index of the player in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newPlayers'
+	 * @param shape - a Rectangle with the new shape and position
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updatePlayer(int ID, Rectangle shape){
+		if(ID < 0 || ID >= players.length ||  shape==null){return false;}
+		ShapeImage current = players[ID];
+		current.newShape(shape);
+		newPlayers = true;
+		return true;
+	}
+	/**
+	 * Updates a single player. Use when assigning an image that has been used before
+	 * @param ID - the index of the player in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newPlayers'
+	 * @param textureID - a texture ID. The image needs to be already loaded into the Graphics Card
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updatePlayer(int ID, int textureID){
+		if(ID < 0 || ID >= players.length ||  textureID==0){return false;}
+		ShapeImage current = players[ID];
+		current.newData(textureID);
+		newPlayers = true;
+		return true;
+	}
+	/**
+	 * Updates a single player. Use when assigning a new image
+	 * @param ID - the index of the player in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newPlayers'
+	 * @param image - a BufferedImage to be turned into a texture. 
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updatePlayer(int ID, BufferedImage image){
+		if(ID < 0 || ID >= players.length ||  image==null){return false;}
+		ShapeImage current = players[ID];
+		current.newData(OpenGL_Renderer.prepareTexture(image));
+		newPlayers = true;
+		return true;
+	}
+	
+	/**
+	 * Updates a single terrain object. Use when assigning both new position and an image that has been used before
+	 * @param ID - the index of the object in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newTerrain'
+	 * @param shape - a Rectangle with the new shape and position
+	 * @param textureID - a texture ID. The image needs to be already loaded into the Graphics Card
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updateTerrain(int ID, Rectangle shape, int textureID){
+		if(ID < 0 || ID >= terrain.length || shape==null || textureID==0){return false;}
+		ShapeImage current = terrain[ID];
+		current.newData(textureID);
+		current.newShape(shape);
+		newTerrain = true;
+		return true;
+	}
+	/**
+	 * Updates a single terrain object. Use when assigning both new position and new image
+	 * @param ID - the index of the object in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newTerrain'
+	 * @param shape - a Rectangle with the new shape and position
+	 * @param image - a BufferedImage to be turned into a texture. 
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updateTerrain(int ID, Rectangle shape, BufferedImage image){
+		if(ID < 0 || ID >= terrain.length ||  shape==null || image==null){return false;}
+		ShapeImage current = terrain[ID];
+		current.newData(OpenGL_Renderer.prepareTexture(image));
+		current.newShape(shape);
+		newTerrain = true;
+		return true;
+	}
+	/**
+	 * Updates a single terrain object. Use when assigning a new position
+	 * @param ID - the index of the object in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newTerrain'
+	 * @param shape - a Rectangle with the new shape and position
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updateTerrain(int ID, Rectangle shape){
+		if(ID < 0 || ID >= terrain.length ||  shape==null){return false;}
+		ShapeImage current = terrain[ID];
+		current.newShape(shape);
+		newTerrain = true;
+		return true;
+	}
+	/**
+	 * Updates a single terrain object. Use when assigning an image that has been used before
+	 * @param ID - the index of the object in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newTerrain'
+	 * @param textureID - a texture ID. The image needs to be already loaded into the Graphics Card
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updateTerrain(int ID, int textureID){
+		if(ID < 0 || ID >= terrain.length ||  textureID==0){return false;}
+		ShapeImage current = terrain[ID];
+		current.newData(textureID);
+		newTerrain = true;
+		return true;
+	}
+	/**
+	 * Updates a single terrain object. Use when assigning a new image
+	 * @param ID - the index of the object in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newTerrain'
+	 * @param image - a BufferedImage to be turned into a texture. 
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updateTerrain(int ID, BufferedImage image){
+		if(ID < 0 || ID >= terrain.length ||  image==null){return false;}
+		ShapeImage current = terrain[ID];
+		current.newData(OpenGL_Renderer.prepareTexture(image));
+		newTerrain = true;
+		return true;
+	}
+	
+	/**
+	 * Updates a single NPC. Use when assigning both new position and an image that has been used before
+	 * @param ID - the index of the NPC in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newNPC'
+	 * @param shape - a Rectangle with the new shape and position
+	 * @param textureID - a texture ID. The image needs to be already loaded into the Graphics Card
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updateNPC(int ID, Rectangle shape, int textureID){
+		if(ID < 0 || ID >= npc.length || shape==null || textureID==0){return false;}
+		ShapeImage current = npc[ID];
+		current.newData(textureID);
+		current.newShape(shape);
+		newTerrain = true;
+		return true;
+	}
+	/**
+	 * Updates a single NPC. Use when assigning both new position and new image
+	 * @param ID - the index of the NPC in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newNPC'
+	 * @param shape - a Rectangle with the new shape and position
+	 * @param image - a BufferedImage to be turned into a texture. 
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updateNPC(int ID, Rectangle shape, BufferedImage image){
+		if(ID < 0 || ID >= npc.length ||  shape==null || image==null){return false;}
+		ShapeImage current = npc[ID];
+		current.newData(OpenGL_Renderer.prepareTexture(image));
+		current.newShape(shape);
+		newTerrain = true;
+		return true;
+	}
+	/**
+	 * Updates a single NPC. Use when assigning a new position
+	 * @param ID - the index of the NPC in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newNPC'
+	 * @param shape - a Rectangle with the new shape and position
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updateNPC(int ID, Rectangle shape){
+		if(ID < 0 || ID >= npc.length ||  shape==null){return false;}
+		ShapeImage current = npc[ID];
+		current.newShape(shape);
+		newTerrain = true;
+		return true;
+	}
+	/**
+	 * Updates a single NPC. Use when assigning an image that has been used before
+	 * @param ID - the index of the NPC in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newNPC'
+	 * @param textureID - a texture ID. The image needs to be already loaded into the Graphics Card
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updateNPC(int ID, int textureID){
+		if(ID < 0 || ID >= npc.length ||  textureID==0){return false;}
+		ShapeImage current = npc[ID];
+		current.newData(textureID);
+		newTerrain = true;
+		return true;
+	}
+	/**
+	 * Updates a single NPC. Use when assigning a new image
+	 * @param ID - the index of the NPC in the array (equal to the index in the Rectangle[]/BufferedImage[] used to call 'newNPC'
+	 * @param image - a BufferedImage to be turned into a texture. 
+	 * @return - 'true' if parameters were accepted
+	 */
+	public boolean updateNPC(int ID, BufferedImage image){
+		if(ID < 0 || ID >= npc.length ||  image==null){return false;}
+		ShapeImage current = npc[ID];
+		current.newData(OpenGL_Renderer.prepareTexture(image));
+		newTerrain = true;
+		return true;
+	}
+	
+	
+	
+	/**
+	 * Gets the latest version of the players, and also sets 'newPlayers' so that 
+	 * the program knows the new information has been collected.
+	 * @return - a ShapeImage[] containing information about the players
+	 */
+	public ShapeImage[] getPlayers(){
+		newPlayers = false;		//If there was new information we have not checked it so it's not new anymore
+		return players;
+	}
+	/**
+	 * Gets the latest version of the terrain, and also sets 'newTerrain' so that 
+	 * the program knows the new information has been collected.
+	 * @return - a ShapeImage[] containing information about the terrain
+	 */
+	public ShapeImage[] getTerrain(){
+		newTerrain = false;		//If there was new information we have not checked it so it's not new anymore
+		return terrain;
+	}
+	/**
+	 * Gets the latest version of the NPCs, and also sets 'newNPC' so that 
+	 * the program knows the new information has been collected.
+	 * @return - a ShapeImage[] containing information about the NPCs
+	 */
+	public ShapeImage[] getNPC(){
+		newNPC = false;			//If there was new information we have not checked it so it's not new anymore
+		return npc;
+	}
+	/**
+	 * @return - an Integer which is a texture ID for the background image
+	 */
+	public int getBackground(){return background;}
+	
+	/**
+	 * Tries to start the graphics engine
+	 * @return - 'true' if everything that needs to be initiated has been initiated, and the thread has been started
+	 */
+	public boolean startGraphics(){
+		if(background != 0){	//We just make sure that we have a background. I think we should at least have that much
+			//Starts the Thread which will handle the rendering and binding it to our variable 'renderer' for easy access.
+			new Thread(renderer).start();	
+			return true;		//We started it!
+		}
+		else{return false;}	//Insert a background, you can do that at least right?
+	}
+	
+	/**
+	 * Sets the image which will be shown in the background
+	 * @param image
+	 */
+	public void setBackground(BufferedImage image){
+		background = OpenGL_Renderer.prepareTexture(image);		//Prepare the background to be used
+	}
+}
