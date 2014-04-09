@@ -1,0 +1,72 @@
+package project.graphics;
+
+import java.awt.Rectangle;
+
+/**
+ * This class just contains information about one Object that is 
+ * supposed to be rendered. To be precise, it contains an ID-number
+ * to an image that has been loaded into the Graphics Card which
+ * can be used to tell the Graphics Card to draw that image.
+ * 
+ * @author Sebastian
+ *
+ */
+public class ShapeImage {
+	private int textureID;
+	private Rectangle shape;
+	public final int ID;
+	
+	/**
+	 * An Object containing an image in the form of a ByteBuffer
+	 * @param textureID - an Integer which is linked to a certain image loaded into the Graphics Card. Used to display the image 
+	 * @param shape - a Rectangle with the position and shape
+	 * @param identifier - a unique identifier used for list management
+	 */
+	public ShapeImage(int textureID, Rectangle shape, int identifier){
+		if(shape==null){System.out.println("ShapeImage: One of the init parameters was 'null'"); ID=-1;}
+		else{
+			this.textureID = textureID;			// Save the texture identifier
+			this.shape = shape;					// Save the shape/position 
+			ID = identifier;					// Save the numeric ID
+		}
+	}
+	
+	/**
+	 * Gets the stored image in the form where OpenGL can render it 
+	 * @return - a ByteBuffer with an image in an RGBA-configuration
+	 */
+	public int getTextureID(){return textureID;}
+	
+	/**
+	 * Exchanges the image data stored in the ShapeImage
+	 */
+	public void newData(int newTextureID){
+		/*
+		 * Just adds the ID to the new Texture. Once we use animations we can 
+		 * simply have the Animations Class save all texture IDs connected to 
+		 * the PC/NPC it animates, so that we can change them quickly.
+		 */
+		this.textureID = newTextureID;	 
+	}
+	
+	
+	/**
+	 * Gets the Rectangle containing the shape and position in which the image should be drawn
+	 * @return - a Rectangle with information about the shape and position of the ShapeImage
+	 */
+	public Rectangle getShape(){return shape;}
+	
+	/**
+	 * Exchanges the position and shape data stored in the ShapeImage
+	 * @param newShape - a Rectangle with the new position and shape
+	 * @return - 'true' if the rectangle was not null, else 'false'
+	 */
+	public boolean newShape(Rectangle newShape){
+		//We just want to make sure the shape actually exists so that we don't get any surprise errors later
+		if(newShape != null){
+			this.shape = newShape;
+			return true;
+		}
+		else{return false;}
+	}
+}

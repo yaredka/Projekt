@@ -1,0 +1,363 @@
+package project.graphics;
+
+import static org.lwjgl.opengl.ARBDebugOutput.glDebugMessageCallbackARB;
+import static org.lwjgl.opengl.GL11.*;
+
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
+
+import org.lwjgl.BufferUtils;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.opengl.ARBDebugOutputCallback;
+import org.lwjgl.opengl.ContextAttribs;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GLContext;
+import org.lwjgl.opengl.PixelFormat;
+
+/**
+ * This is the class which handles the actual rendering. 
+ * It checks if there is any new data and if there is it's loaded in.
+ * 
+ * @author Sebastian
+ *
+ */
+public class OpenGL_Renderer implements Runnable{
+	private GraphicHandler dataSource;		//The class we use as a buffer for data while we're not currently working.
+	
+	private ShapeImage[] terrain = null, npc = null, players = null;
+	private int cameraFocus;
+	private int background = 0;		//The background texture ID
+	private int FPS;	//The update speed we want
+	private boolean keepRunning;	//Going to be used to stop the renderer once we want to shut down.
+	
+	public static int MINIMAL_ACCEPTABLE_FPS = 30;
+	
+	/**
+	 * A class which implements Runnable.
+	 * Can render images from 3 ShapeImage[]
+	 * to the screen.
+	 * @param handler - the source/handler where we get our data from
+	 */
+	public OpenGL_Renderer(GraphicHandler handler, int fps){
+		this.dataSource = handler;		//Now we know where to get data from.
+		//We then set the FPS, and make sure to keep it within our limit of acceptable values
+		if(fps >= MINIMAL_ACCEPTABLE_FPS){FPS = fps;}
+		else{FPS = MINIMAL_ACCEPTABLE_FPS;}
+	}
+	
+	/**
+	 * Gets the FPS the renderer is currently using
+	 * @return - an Integer equal to the maximum FPS the renderer will use
+	 */
+	public int getFPS(){return FPS;}	
+	
+	/**
+	 * Sets a new FPS for the renderer to use.
+	 * It must be equal or higher than the
+	 * OpenGL_Renderer.MINIMAL_ACCEPTABLE_FPS
+	 * or it will not be accepted.
+	 * @param fps - the new FPS you wish to set
+	 * @return - returns 'true' if the new FPS was acceptable, or 'false' if it was too low
+	 */
+	public boolean setFPS(int fps){
+		if(fps < MINIMAL_ACCEPTABLE_FPS){return false;}
+		else{
+			FPS = fps;
+			return true;
+		}
+	}
+	
+	/**
+	 * Creates a texture out of an image and sends it to the graphics card.
+	 * Once it has been created it will remain there until the program is
+	 * shut down and it can be accessed by the reference Integer returned. 
+	 * @param image - the image to be turned into a texture.
+	 * @return - an Integer that acts as a reference to the texture for OpenGL
+	 */
+	public static int prepareTexture(BufferedImage image){
+		if(image == null){return 0;}	//The number 0 is the only number which means "draw nothing" to OpenGL, so we use it for safety
+		//Graphic Cards can't handle BufferedImage, we need to convert it into Bytes in a format it can understand (ByteBuffer)
+		ByteBuffer data = configureImage(image);	
+		int width = image.getWidth(), height = image.getHeight();	//Get the dimensions of the image
+		int texture = glGenTextures();		//Get a texture ID from the Graphics Card (GC) that we can use to identify our texture
+		glBindTexture(GL_TEXTURE_2D, texture);		//Tells the GC that we're going to make that texture a 2D one now.
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);	//Assign the data to the GC
+		
+		/*
+		 * Normally the graphic card want smaller versions of the images for the 
+		 * sake of being able to take shortcuts when it can't keep up (like if
+		 * it has too much to load in). It can then load those smaller versions 
+		 * first and then add the more detailed ones as soon as it has a bit more
+		 * time. In our case we will not use anything this heavy (it's for rendering
+		 * large 3D worlds like World of Warcraft where faraway landscapes are often 
+		 * rendered like that to save performance (it doesn't matter if it doesn't
+		 * render a flower when you're 500 yards away after all, you won't see it).
+		 * 
+		 * That's why these next two lines of code tells the GC to ignore the missing
+		 * smaller versions and instead take the time to render everything.
+		 */
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);	
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		return texture;		//Returns the texture ID so that it can be used later to render stuff.
+	}
+	
+	/**
+	 * Turns a BufferedImage into a ByteBuffer which can be used to render the image in OpenGL
+	 * @param image - a BufferedImage
+	 * @return - a ByteBuffer with the image data in a RGBA-configuration, or 'null' if the BufferedImage was null 
+	 */
+	private static ByteBuffer configureImage(BufferedImage image){
+		int width = image.getWidth(), height = image.getHeight();		//We will use the width/height of the image a lot so we'll save them 
+		int[] pixels = image.getRGB(0, 0, width, height, new int[width*height], 0, width);	//Gets an int[] where each int equals one pixel
+		
+		//It goes four Bytes for each Integer so the ByteBuffer needs to be four times as long as the pixel array
+		ByteBuffer data = BufferUtils.createByteBuffer(4*width*height);	
+		for(int i = 0; i < pixels.length; i++){
+			/*
+			 * In here we simply break out the individual color values 
+			 * (and the alpha value) from each pixel and save them in
+			 * proper order in the ByteBuffer.
+			 */
+			int pixel = pixels[i];
+			data.put((byte) ((pixel >> 16) & 0xFF));    // Red component
+            data.put((byte) ((pixel >> 8) & 0xFF));     // Green component
+            data.put((byte) (pixel & 0xFF));			// Blue component
+            data.put((byte) ((pixel >> 24) & 0xFF));	// Alpha component
+		}
+		
+		//The ByteBuffer is read from a certain index. After writing everything the index is at the end so we need to move it back to the start
+		data.flip();	
+		return data;	//Now we return the ByteBuffer with the image information
+	}
+
+	/**
+	 * Takes in a position and calculates the offset 
+	 * to place the camera in the proper position. 
+	 * @param x - a Double with the X-coordinate
+	 * @param y - a Double with the Y-coordinate
+	 * @return - a point containing the X and Y offsets suitable 
+	 */
+	private Point handleCameraFocusCoordinates(Rectangle position){
+		double centerX = position.getCenterX(), centerY = position.getCenterY();
+		double height = position.getHeight(), width = position.getWidth();
+		int x, y;
+		x = (int)(width - centerX);
+		y = (int)(height - centerY);
+		return new Point(x, y);
+	}
+	
+	@Override
+	public void run() {
+		//We start by loading the information about the background, players, terrain, NPCs and camera focus.
+		background = dataSource.getBackground();
+		players = dataSource.getPlayers();		
+		terrain = dataSource.getTerrain();
+		npc = dataSource.getNPC();
+		cameraFocus = dataSource.getFocusIndex();
+		
+		//Then we try to start up the window
+		try {
+			//Sets the window size to Full Screen
+			Display.setDisplayModeAndFullscreen(Display.getDesktopDisplayMode());		
+			//Creates the window and sets its properties to accept a debugger being added (OpenGL can't be debugged normally)
+			Display.create(new PixelFormat(), new ContextAttribs().withDebug(true)); 
+			if(GLContext.getCapabilities().GL_ARB_debug_output){
+				//Checks if the Graphics Card is capable of using a built in debugger. If not we simply won't use it 
+				glDebugMessageCallbackARB(new ARBDebugOutputCallback());
+			}
+		} catch (LWJGLException e) {
+			e.printStackTrace();	//Just print any exception, you know the drill...
+		}
+		
+		glEnable(GL_TEXTURE_2D);		//Tells the Graphics Card to interpret textures as 2D ones
+		keepRunning = true;			//Now we want to keep running until we're told to stop
+		
+		while(keepRunning){
+			if(Display.isCloseRequested()){dataSource.requestClose();}	//If the user has tried to close the window we tell the handler that
+			
+			//These two lines clear the color buffer so that we don't get colors mixing with previous iterations
+			glClearColor(0, 0, 0, 0);		
+ 			glClear(GL_COLOR_BUFFER_BIT);	
+ 			
+ 			/*
+ 			 * OpenGl normally uses float coordinates where origo (0, 0) is in the middle of 
+ 			 * the screen and the edges of the screen are at a distance of 1 from origo.
+ 			 * This is similar to the type we use in math but Java uses a different one and
+ 			 * to make things easier for both us and our program to handle positions.
+ 			 * That's what we do these following three lines of code.
+ 			 */
+ 			glMatrixMode(GL_PROJECTION);	//Loads up the Projection-matrix
+ 			glLoadIdentity();	//Resets the loaded matrix (the projection one)
+ 			glOrtho(0, Display.getWidth(), Display.getHeight(), 0, -1, 1);	//Changes the coordinate system used to draw to the one we want
+ 			
+ 			/*
+ 			 * Now we want to tell the program where it should focus the camera.
+ 			 * This is important as it's allow the camera to seemingly follow
+ 			 * our player character around so that we can see what we're doing.
+ 			 */
+ 			int x = 0, y = 0;	//We're going to save the coordinates in these variables
+ 			if(players != null){
+ 				//Now we have to handle calculating the proper offset for the camera, and then store it in 'x' and 'y'
+ 				//We send in the rectangle describing the location of the player we should focus on
+ 				Point offset = handleCameraFocusCoordinates(players[cameraFocus].getShape());
+ 				x = offset.x;
+ 				y = offset.y;
+ 			}
+ 			
+ 			glMatrixMode(GL_MODELVIEW);	//We load the matrix which determines where on the screen origo is supposed to be
+ 			glLoadIdentity();		//We reset the matrix from any influence it might have had since earlier
+ 			
+ 			//We want to draw the background before we distort the target of painting
+ 			if(background != 0){
+ 				glBindTexture(GL_TEXTURE_2D, background);	//We load in the background texture
+ 				glBegin(GL_QUADS);	//We start defining four points between which we'll draw the background
+ 	 			{
+ 		 			glColor3f(1, 1, 1);	//Sets drawing color to be White so that the image is not discolored
+ 		 			
+ 		 			//The upper left corner of the screen
+ 		 			glTexCoord2f(0, 0);
+ 		 			glVertex2f(0, 0);
+ 		 			
+ 		 			//The upper right corner of the screen
+ 		 			glTexCoord2f(1, 0);
+ 		 			glVertex2f(Display.getWidth(), 0);
+ 		 			
+ 		 			//glColor3f(0.5f, 0.5f, 0.5f);
+ 		 			glTexCoord2f(1, 1);
+ 		 			glVertex2f(Display.getWidth(), Display.getHeight());
+ 		 			
+ 		 			//glColor3f(0, 0, 1);
+ 		 			glTexCoord2f(0, 1);
+ 		 			glVertex2f(0, Display.getHeight());
+ 	 			}
+ 	 			glEnd();
+ 			}
+ 			//We load the offset into the matrix. We only use 2D so the 'z' value is 0. The Display thing is to center the camera
+ 			glTranslatef(x + Display.getWidth()/2, y + Display.getHeight()/2, 0);
+ 			
+ 			/*
+ 			 * Now we can draw stuff.
+ 			 * We will draw first the terrain, 
+ 			 * followed by NPCs and finally players.
+ 			 * This is to get what we want most up front.
+ 			 */
+ 			
+ 			if(terrain != null){	//Here we'll draw the terrain
+ 				Rectangle shape = null;
+ 				float minX, minY, maxX, maxY;
+ 				for(int i = 0; i < terrain.length; i++){
+ 					
+ 					//Here we use the rectangle to get the four corners of the space we should draw in
+ 					shape = terrain[i].getShape();
+ 					minX = (float)shape.getMinX();
+ 					minY = (float)shape.getMinY();
+ 					maxX = (float)shape.getMaxX();
+ 					maxY = (float)shape.getMaxY();
+ 					
+ 					glBindTexture(GL_TEXTURE_2D, terrain[i].getTextureID());	//We load in the texture
+ 	 				glBegin(GL_QUADS);	//We start defining four points between which we'll draw the image
+ 	 	 			{
+ 	 		 			glColor3f(1, 1, 1);	//Sets drawing color to be White so that the image is not discolored
+ 	 		 			
+ 	 		 			//The upper left corner 
+ 	 		 			glTexCoord2f(0, 0);
+ 	 		 			glVertex2f(minX, minY);
+ 	 		 			
+ 	 		 			//The upper right corner 
+ 	 		 			glTexCoord2f(1, 0);
+ 	 		 			glVertex2f(maxX, minY);
+ 	 		 			
+ 	 		 			//The lower right corner 
+ 	 		 			glTexCoord2f(1, 1);
+ 	 		 			glVertex2f(maxX, maxY);
+ 	 		 			
+ 	 		 			//The lower left corner
+ 	 		 			glTexCoord2f(0, 1);
+ 	 		 			glVertex2f(minX, maxY);
+ 	 	 			}
+ 	 	 			glEnd();
+ 				}
+ 			}
+ 			
+ 			if(npc != null){	//Here we'll draw the NPCs
+ 				Rectangle shape = null;
+ 				float minX, minY, maxX, maxY;
+ 				for(int i = 0; i < npc.length; i++){
+ 					
+ 					//Here we use the rectangle to get the four corners of the space we should draw in
+ 					shape = npc[i].getShape();
+ 					minX = (float)shape.getMinX();
+ 					minY = (float)shape.getMinY();
+ 					maxX = (float)shape.getMaxX();
+ 					maxY = (float)shape.getMaxY();
+ 					
+ 					glBindTexture(GL_TEXTURE_2D, npc[i].getTextureID());	//We load in the texture
+ 	 				glBegin(GL_QUADS);	//We start defining four points between which we'll draw the image
+ 	 	 			{
+ 	 		 			glColor3f(1, 1, 1);	//Sets drawing color to be White so that the image is not discolored
+ 	 		 			
+ 	 		 			//The upper left corner 
+ 	 		 			glTexCoord2f(0, 0);
+ 	 		 			glVertex2f(minX, minY);
+ 	 		 			
+ 	 		 			//The upper right corner 
+ 	 		 			glTexCoord2f(1, 0);
+ 	 		 			glVertex2f(maxX, minY);
+ 	 		 			
+ 	 		 			//The lower right corner 
+ 	 		 			glTexCoord2f(1, 1);
+ 	 		 			glVertex2f(maxX, maxY);
+ 	 		 			
+ 	 		 			//The lower left corner
+ 	 		 			glTexCoord2f(0, 1);
+ 	 		 			glVertex2f(minX, maxY);
+ 	 	 			}
+ 	 	 			glEnd();
+ 				}
+ 			}
+ 			
+ 			if(players != null){	//Here we'll draw the players
+ 				Rectangle shape = null;
+ 				float minX, minY, maxX, maxY;
+ 				for(int i = 0; i < players.length; i++){
+ 					
+ 					//Here we use the rectangle to get the four corners of the space we should draw in
+ 					shape = players[i].getShape();
+ 					minX = (float)shape.getMinX();
+ 					minY = (float)shape.getMinY();
+ 					maxX = (float)shape.getMaxX();
+ 					maxY = (float)shape.getMaxY();
+ 					
+ 					glBindTexture(GL_TEXTURE_2D, players[i].getTextureID());	//We load in the texture
+ 	 				glBegin(GL_QUADS);	//We start defining four points between which we'll draw the image
+ 	 	 			{
+ 	 		 			glColor3f(1, 1, 1);	//Sets drawing color to be White so that the image is not discolored
+ 	 		 			
+ 	 		 			//The upper left corner 
+ 	 		 			glTexCoord2f(0, 0);
+ 	 		 			glVertex2f(minX, minY);
+ 	 		 			
+ 	 		 			//The upper right corner 
+ 	 		 			glTexCoord2f(1, 0);
+ 	 		 			glVertex2f(maxX, minY);
+ 	 		 			
+ 	 		 			//The lower right corner 
+ 	 		 			glTexCoord2f(1, 1);
+ 	 		 			glVertex2f(maxX, maxY);
+ 	 		 			
+ 	 		 			//The lower left corner
+ 	 		 			glTexCoord2f(0, 1);
+ 	 		 			glVertex2f(minX, maxY);
+ 	 	 			}
+ 	 	 			glEnd();
+ 				}
+ 			}
+ 			
+ 			Display.sync(FPS);
+			Display.update();
+		}
+	}
+	
+}
