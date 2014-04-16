@@ -1,4 +1,4 @@
-Projektledare: Johny Premanantham
+﻿Projektledare: Johny Premanantham
 
 Utvecklare: Sebastian Nilsson, Johannes Borg
   Medutvecklare: Johny Premanantham, Xinmao Wang
@@ -11,7 +11,7 @@ Webbutvecklare: Yared Kinfe Abebe
 
 Ljuddesigner: Kentaro Hayashida
 
-Testare: Babak Kabiri, Johannes Borg
+Testare: Babak Kabiri, Johannes Borg, Yared Kinfe Abebe
 
 Sekreterare: Alex Sun
   Andre sekreterare: Sebastian Nilsson
